@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Money Glitch</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;800;900&family=Manrope:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+  :root{
+    --bg:            #0a0a0e;
+    --bg-soft:       #101016;
+    --surface:       #15151d;
+    --surface-2:     #1c1c26;
+    --border:        #2a2a36;
+    --text:          #f4f3ee;
+    --text-dim:      #9a99a8;
+    --text-faint:    #63626f;
+    --lime:          #c8ff4d;
+    --lime-dim:      #8fb536;
+    --violet:        #9d7bff;
+    --violet-soft:   #7a5cf0;
+    --red:           #ff5d5d;
+    --font-display:  'Unbounded', 'Arial Black', sans-serif;
+    --font-body:     'Manrope', -apple-system, sans-serif;
+    --font-mono:     'Space Mono', 'Courier New', monospace;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    padding:0 20px;
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important; }
+  }
+
+  ::selection{ background:var(--lime); color:#0a0a0e; }
+
+  a{ color:inherit; }
+
+  h1,h2,h3{
+    font-family:var(--font-display);
+    margin:0;
+    text-wrap:balance;
+    line-height:1.05;
+  }
+
+  p{ margin:0; }
+
+  img{ max-width:100%; }
+
+  .wrap{
+    max-width:1040px;
+    margin:0 auto;
+    position:relative;
+  }
+
+  /* ---------- ambient background canvas ---------- */
+  #bg-canvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:-1;
+    opacity:0.55;
+    pointer-events:none;
+  }
+
+  .grain{
+    position:fixed;
+    inset:0;
+    z-index:-1;
+    pointer-events:none;
+    opacity:0.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* ---------- scroll progress ---------- */
+  #progress{
+    position:fixed;
+    top:0; left:0;
+    height:3px;
+    width:0%;
+    background:linear-gradient(90deg, var(--lime), var(--violet));
+    z-index:200;
+    transition:width 0.08s linear;
+  }
+
+  /* ---------- reveal utility ---------- */
+  .reveal{
+    opacity:0;
+    transform:translateY(28px);
+    transition:opacity 0.8s cubic-bezier(.16,.84,.44,1), transform 0.8s cubic-bezier(.16,.84,.44,1);
+  }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+  .reveal.d1{ transition-delay:0.08s; }
+  .reveal.d2{ transition-delay:0.16s; }
+  .reveal.d3{ transition-delay:0.24s; }
+  .reveal.d4{ transition-delay:0.32s; }
+
+  /* ================= NAV ================= */
+  nav{
+    max-width:1040px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:22px 0;
+    position:relative;
+    z-index:50;
+  }
+  .logo{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:18px;
+    letter-spacing:-0.02em;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .logo .dot{
+    width:9px; height:9px;
+    border-radius:50%;
+    background:var(--lime);
+    box-shadow:0 0 14px 2px var(--lime);
+    animation:pulse-dot 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot{
+    0%,100%{ transform:scale(1); opacity:1; }
+    50%{ transform:scale(1.5); opacity:0.6; }
+  }
+  .nav-cta{
+    font-family:var(--font-body);
+    font-weight:700;
+    font-size:13px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 18px;
+    border-radius:100px;
+    cursor:pointer;
+  }
+
+  /* ================= HERO ================= */
+  header.hero{
+    padding:64px 0 40px;
+    position:relative;
+    text-align:center;
+  }
+
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--lime);
+    background:rgba(200,255,77,0.08);
+    border:1px solid rgba(200,255,77,0.25);
+    padding:7px 14px;
+    border-radius:100px;
+    margin-bottom:28px;
+  }
+  .eyebrow svg{ width:13px; height:13px; }
+
+  .hero h1{
+    font-size:clamp(38px, 7.2vw, 84px);
+    font-weight:800;
+    letter-spacing:-0.02em;
+  }
+  .hero h1 .accent{
+    color:var(--lime);
+    position:relative;
+    display:inline-block;
+  }
+  .hero h1 .accent svg{
+    position:absolute;
+    left:0; bottom:-6px;
+    width:100%;
+    height:14px;
+  }
+  .hero .sub{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(18px, 3vw, 26px);
+    color:var(--text-dim);
+    margin-top:10px;
+  }
+
+  .hero-cta{
+    margin-top:38px;
+    display:inline-flex;
+    align-items:center;
+    gap:14px;
+    background:var(--lime);
+    color:#0a0a0e;
+    font-family:var(--font-body);
+    font-weight:800;
+    font-size:16px;
+    padding:19px 30px 19px 26px;
+    border-radius:100px;
+    border:none;
+    cursor:pointer;
+    text-decoration:none;
+    position:relative;
+    isolation:isolate;
+    box-shadow:0 0 0 0 rgba(200,255,77,0.5);
+    transition:transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.4s ease;
+  }
+  .hero-cta:hover{
+    transform:translateY(-3px) scale(1.03);
+  }
+  .hero-cta .play-ring{
+    width:32px; height:32px;
+    border-radius:50%;
+    background:#0a0a0e;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .hero-cta .play-ring svg{ width:12px; height:12px; fill:var(--lime); }
+  .hero-cta::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    border-radius:100px;
+    border:2px solid var(--lime);
+    z-index:-1;
+    animation:ring-pulse 2.4s cubic-bezier(.2,.6,.4,1) infinite;
+  }
+  @keyframes ring-pulse{
+    0%{ opacity:0.6; transform:scale(1); }
+    100%{ opacity:0; transform:scale(1.45); }
+  }
+
+  .hero-note{
+    margin-top:16px;
+    font-size:13px;
+    color:var(--text-faint);
+    font-family:var(--font-mono);
+  }
+
+  /* ---------- marquee ---------- */
+  .marquee-band{
+    margin-top:56px;
+    border-top:1px solid var(--border);
+    border-bottom:1px solid var(--border);
+    background:var(--bg-soft);
+    padding:16px 0;
+    overflow:hidden;
+    width:100vw;
+    margin-left:calc(50% - 50vw);
+  }
+  .marquee-track{
+    display:flex;
+    width:max-content;
+    animation:marquee 26s linear infinite;
+  }
+  @keyframes marquee{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(-50%); }
+  }
+  .marquee-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:16px;
+    color:var(--text-dim);
+    padding:0 28px;
+    white-space:nowrap;
+  }
+  .marquee-item svg{ width:20px; height:20px; flex-shrink:0; color:var(--lime); }
+  .marquee-item b{ color:var(--text); font-weight:700; }
+  .marquee-item .sep{ color:var(--text-faint); margin-left:28px; }
+
+  /* ================= SECTION SHELL ================= */
+  section{
+    padding:88px 0;
+    position:relative;
+  }
+  .section-label{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--violet);
+    margin-bottom:14px;
+    display:block;
+  }
+  .section-head{
+    max-width:640px;
+    margin-bottom:52px;
+  }
+  .section-head h2{
+    font-size:clamp(28px, 4.5vw, 46px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .section-head p{
+    margin-top:14px;
+    color:var(--text-dim);
+    font-size:17px;
+    line-height:1.6;
+    max-width:60ch;
+  }
+
+  /* ================= VIDEO ================= */
+  .video-frame{
+    position:relative;
+    border-radius:20px;
+    overflow:hidden;
+    aspect-ratio:16/9;
+    background:
+      radial-gradient(circle at 30% 20%, rgba(157,123,255,0.35), transparent 55%),
+      radial-gradient(circle at 75% 80%, rgba(200,255,77,0.25), transparent 55%),
+      linear-gradient(135deg, #17171f, #0d0d12);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .video-frame .scan{
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+  .video-frame .tag{
+    position:absolute;
+    top:18px; left:18px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    border:1px solid var(--border);
+    background:rgba(10,10,14,0.6);
+    padding:6px 12px;
+    border-radius:100px;
+  }
+  .video-frame .timecode{
+    position:absolute;
+    bottom:18px; right:18px;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+  }
+  .play-btn{
+    width:96px; height:96px;
+    border-radius:50%;
+    background:rgba(244,243,238,0.08);
+    backdrop-filter:blur(6px);
+    border:1px solid rgba(244,243,238,0.25);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    transition:transform 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .video-frame:hover .play-btn{ transform:scale(1.1); }
+  .play-btn::before,.play-btn::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    border:1px solid rgba(200,255,77,0.4);
+    animation:play-ripple 2.6s ease-out infinite;
+  }
+  .play-btn::after{ animation-delay:1.3s; }
+  @keyframes play-ripple{
+    0%{ transform:scale(1); opacity:0.9; }
+    100%{ transform:scale(1.9); opacity:0; }
+  }
+  .play-btn svg{ width:26px; height:26px; fill:var(--text); margin-left:4px; }
+  .video-caption{
+    margin-top:18px;
+    text-align:center;
+    color:var(--text-faint);
+    font-size:13px;
+    font-family:var(--font-mono);
+  }
+
+  /* ================= PROBLEM ================= */
+  .problem-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:14px;
+  }
+  @media (max-width:640px){ .problem-grid{ grid-template-columns:1fr; } }
+  .problem-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:26px;
+    display:flex;
+    gap:16px;
+    align-items:flex-start;
+    transition:border-color 0.3s ease, transform 0.3s ease;
+  }
+  .problem-card:hover{
+    border-color:rgba(255,93,93,0.4);
+    transform:translateY(-3px);
+  }
+  .problem-card .x-icon{
+    width:34px; height:34px;
+    border-radius:50%;
+    background:rgba(255,93,93,0.12);
+    border:1px solid rgba(255,93,93,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .problem-card .x-icon svg{ width:14px; height:14px; stroke:var(--red); }
+  .problem-card p{ color:var(--text-dim); font-size:15.5px; line-height:1.55; }
+  .problem-card strong{ color:var(--text); font-weight:700; }
+
+  /* ================= SOLUTION ================= */
+  .solution-list{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .solution-item{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    background:linear-gradient(90deg, var(--surface), var(--surface) 60%, transparent);
+    border:1px solid var(--border);
+    border-left:3px solid var(--lime);
+    border-radius:14px;
+    padding:24px 28px;
+    transition:transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .solution-item:hover{
+    transform:translateX(6px);
+    box-shadow:-4px 0 24px -8px rgba(200,255,77,0.25);
+  }
+  .solution-item .check{
+    width:30px; height:30px;
+    border-radius:50%;
+    background:var(--lime);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .solution-item .check svg{ width:14px; height:14px; stroke:#0a0a0e; }
+  .solution-item .txt{ font-family:var(--font-display); font-weight:600; font-size:17px; }
+  .solution-item .txt span{
+    display:block;
+    font-family:var(--font-body);
+    font-weight:500;
+    font-size:14px;
+    color:var(--text-dim);
+    margin-top:4px;
+  }
+
+  /* ================= WHAT'S INSIDE ================= */
+  .inside-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:18px;
+  }
+  @media (max-width:820px){ .inside-grid{ grid-template-columns:1fr; } }
+  .inside-card{
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:30px 26px 28px;
+    overflow:hidden;
+    transition:transform 0.35s cubic-bezier(.16,.84,.44,1), border-color 0.35s ease;
+  }
+  .inside-card:hover{
+    transform:translateY(-6px);
+    border-color:rgba(157,123,255,0.4);
+  }
+  .inside-card::before{
+    content:'';
+    position:absolute;
+    top:-40%; right:-40%;
+    width:70%; height:70%;
+    background:radial-gradient(circle, rgba(157,123,255,0.22), transparent 70%);
+    opacity:0;
+    transition:opacity 0.4s ease;
+  }
+  .inside-card:hover::before{ opacity:1; }
+  .inside-num{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--violet);
+    letter-spacing:0.05em;
+  }
+  .inside-card h3{
+    margin-top:16px;
+    font-size:20px;
+    font-weight:700;
+    line-height:1.3;
+  }
+  .inside-card p{
+    margin-top:12px;
+    color:var(--text-dim);
+    font-size:14.5px;
+    line-height:1.6;
+  }
+  .inside-icon{
+    width:44px; height:44px;
+    border-radius:12px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:6px;
+  }
+  .inside-icon svg{ width:20px; height:20px; stroke:var(--lime); }
+
+  /* ================= STATS STRIP ================= */
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  @media (max-width:640px){ .stats{ grid-template-columns:1fr; } }
+  .stat{
+    text-align:center;
+    padding:30px 10px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--surface);
+  }
+  .stat .num{
+    font-family:var(--font-display);
+    font-weight:800;
+    font-size:40px;
+    color:var(--lime);
+    font-variant-numeric:tabular-nums;
+  }
+  .stat .lbl{
+    margin-top:6px;
+    font-size:13px;
+    color:var(--text-dim);
+    font-family:var(--font-mono);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+  }
+
+  /* ================= OFFER ================= */
+  .offer-section{
+    padding:96px 0 100px;
+  }
+  .offer-card{
+    position:relative;
+    border-radius:28px;
+    padding:56px 40px;
+    text-align:center;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(200,255,77,0.14), transparent 50%),
+      radial-gradient(circle at 90% 100%, rgba(157,123,255,0.18), transparent 50%),
+      var(--surface);
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  @media (max-width:480px){
+    .offer-card{ padding:44px 18px; border-radius:22px; }
+  }
+  .offer-tag{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:#0a0a0e;
+    background:var(--lime);
+    padding:7px 16px;
+    border-radius:100px;
+    margin-bottom:26px;
+  }
+  .price-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:center;
+    gap:18px;
+    flex-wrap:wrap;
+    margin:18px 0 8px;
+    min-height:1.1em;
+  }
+  .price-old{
+    position:relative;
+    font-variant-numeric:tabular-nums;
+    font-family:var(--font-display);
+    font-weight:900;
+    line-height:1;
+    /* starting state: big, centered, white — "the real price" */
+    font-size:clamp(56px,9vw,88px);
+    color:var(--text);
+    transition:
+      font-size 0.65s cubic-bezier(.65,0,.35,1),
+      color 0.4s ease 0.15s,
+      transform 0.65s cubic-bezier(.65,0,.35,1);
+  }
+  .price-old::after{
+    content:'';
+    position:absolute;
+    left:-6%; right:0%; top:50%;
+    height:2px;
+    background:var(--red);
+    transform:rotate(-6deg) scaleX(0);
+    transform-origin:left center;
+    transition:transform 0.4s cubic-bezier(.65,0,.35,1) 0.15s;
+  }
+  /* settled state: small, grey, struck-through */
+  .price-old.settled{
+    font-size:22px;
+    color:var(--text-faint);
+    transform:translateY(2px);
+  }
+  .price-old.settled::after{ transform:rotate(-6deg) scaleX(1); }
+  .price-new{
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:clamp(56px,9vw,88px);
+    color:var(--text);
+    line-height:1;
+    font-variant-numeric:tabular-nums;
+    display:inline-block;
+    opacity:0;
+    transform:scale(0.6) translateY(10px);
+    filter:blur(6px);
+    transition:opacity 0.5s cubic-bezier(.16,.84,.44,1), transform 0.5s cubic-bezier(.34,1.56,.64,1), filter 0.5s ease;
+  }
+  .price-new.shown{
+    opacity:1;
+    transform:scale(1) translateY(0);
+    filter:blur(0);
+  }
+  .price-new span{ color:var(--lime); }
+  .price-burst{
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+  }
+  .price-sub{
+    font-size:14px;
+    color:var(--text-dim);
+    font-family:var(--font-mono);
+    margin-bottom:36px;
+  }
+
+  .timer{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:clamp(6px, 2.4vw, 12px);
+    margin:30px 0 38px;
+    flex-wrap:nowrap;
+    width:100%;
+  }
+  .timer .unit{
+    width:clamp(58px, 19vw, 78px);
+    flex:0 1 auto;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:clamp(10px, 3vw, 14px) 0 clamp(7px, 2vw, 10px);
+  }
+  .timer .unit .val{
+    font-family:var(--font-mono);
+    font-weight:700;
+    font-size:clamp(22px, 7vw, 32px);
+    color:var(--lime);
+    font-variant-numeric:tabular-nums;
+    display:block;
+    transition:transform 0.15s ease;
+  }
+  .timer .unit .val.tick{ transform:translateY(-3px) scale(1.06); }
+  .timer .unit .lbl{
+    font-size:clamp(8px, 2.2vw, 10px);
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    font-family:var(--font-mono);
+    margin-top:4px;
+    display:block;
+    white-space:nowrap;
+  }
+  .timer .colon{
+    align-self:center;
+    flex:0 0 auto;
+    font-family:var(--font-mono);
+    font-size:clamp(16px, 5vw, 28px);
+    color:var(--text-faint);
+    margin-top:-6px;
+  }
+  .timer-note{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+    margin-top:-24px;
+    margin-bottom:36px;
+  }
+
+  .offer-cta{
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    background:var(--lime);
+    color:#0a0a0e;
+    font-weight:800;
+    font-size:18px;
+    padding:22px 38px;
+    border-radius:100px;
+    border:none;
+    cursor:pointer;
+    text-decoration:none;
+    box-shadow:0 20px 60px -20px rgba(200,255,77,0.6);
+    transition:transform 0.25s cubic-bezier(.34,1.56,.64,1);
+  }
+  .offer-cta:hover{ transform:translateY(-3px) scale(1.03); }
+  .offer-fine{
+    margin-top:18px;
+    font-size:12.5px;
+    color:var(--text-faint);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .offer-fine svg{ width:13px; height:13px; stroke:var(--lime); }
+
+  /* ================= FAQ ================= */
+  .faq-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .faq-item{
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--surface);
+    overflow:hidden;
+  }
+  .faq-q{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    background:none;
+    border:none;
+    color:var(--text);
+    text-align:left;
+    padding:22px 24px;
+    font-family:var(--font-body);
+    font-weight:700;
+    font-size:16px;
+    cursor:pointer;
+  }
+  .faq-q .plus{
+    width:26px; height:26px;
+    border-radius:50%;
+    border:1px solid var(--border);
+    flex-shrink:0;
+    position:relative;
+  }
+  .faq-q .plus::before,.faq-q .plus::after{
+    content:'';
+    position:absolute;
+    background:var(--lime);
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+  }
+  .faq-q .plus::before{ width:10px; height:2px; }
+  .faq-q .plus::after{ width:2px; height:10px; transition:transform 0.3s ease, opacity 0.3s ease; }
+  .faq-item.open .plus::after{ transform:translate(-50%,-50%) rotate(90deg); opacity:0; }
+  .faq-a{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height 0.4s cubic-bezier(.16,.84,.44,1);
+  }
+  .faq-a p{
+    padding:0 24px 22px;
+    color:var(--text-dim);
+    font-size:15px;
+    line-height:1.6;
+  }
+
+  /* ================= FOOTER CTA ================= */
+  footer{
+    text-align:center;
+    padding:70px 0 50px;
+    border-top:1px solid var(--border);
+    margin-top:20px;
+  }
+  footer .logo{ justify-content:center; margin-bottom:14px; }
+  footer p{ color:var(--text-faint); font-size:13px; }
+
+  /* sticky mini bar */
+  #sticky-bar{
+    position:fixed;
+    left:50%;
+    bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+    transform:translate(-50%, 120%);
+    z-index:150;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    max-width:calc(100vw - 24px);
+    background:rgba(21,21,29,0.9);
+    backdrop-filter:blur(14px);
+    border:1px solid var(--border);
+    border-radius:100px;
+    padding:8px 8px 8px 18px;
+    transition:transform 0.45s cubic-bezier(.16,.84,.44,1);
+    box-shadow:0 20px 50px -15px rgba(0,0,0,0.6);
+  }
+  #sticky-bar.show{ transform:translate(-50%, 0); }
+  #sticky-bar .p{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-dim);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  #sticky-bar .p b{ color:var(--lime); }
+  #sticky-bar a.buy{
+    background:var(--lime);
+    color:#0a0a0e;
+    font-weight:800;
+    font-size:13px;
+    border:none;
+    border-radius:100px;
+    padding:10px 18px;
+    cursor:pointer;
+    white-space:nowrap;
+    text-decoration:none;
+    display:inline-block;
+    flex-shrink:0;
+  }
+  @media (max-width:520px){
+    #sticky-bar .p{ display:none; }
+    #sticky-bar{ padding:6px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="grain"></div>
+<div id="progress"></div>
+
+<nav>
+  <div class="logo"><span class="dot"></span>MONEY&nbsp;GLITCH</div>
+  <button class="nav-cta" onclick="document.getElementById('offer').scrollIntoView({behavior:'smooth'})">Get Access</button>
+</nav>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow reveal in">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      FREE TRAINING · LIMITED SPOTS
+    </div>
+    <h1 class="reveal in d1">
+      Hit Your First <span class="accent">$10k/Month
+        <svg viewBox="0 0 200 14" preserveAspectRatio="none"><path d="M2 10 C 50 2, 150 2, 198 10" stroke="#c8ff4d" stroke-width="5" fill="none" stroke-linecap="round"/></svg>
+      </span><br>In The Easiest Way
+    </h1>
+    <p class="sub reveal in d2">(watch the free training below)</p>
+    <a href="#video" class="hero-cta reveal in d3">
+      <span class="play-ring"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg></span>
+      Watch For Free
+    </a>
+    <p class="hero-note reveal in d4">no credit card · takes 5 minutes · works from any country</p>
+  </header>
+
+  <div class="marquee-band">
+    <div class="marquee-track" id="marquee">
+      <!-- content injected by JS, duplicated for seamless loop -->
+    </div>
+  </div>
+
+  <section id="video">
+    <div class="section-head reveal">
+      <span class="section-label">01 — Watch This First</span>
+      <h2>The exact method, explained in plain english.</h2>
+      <p>No fluff, no hype — just the roadmap real people are using to hit their first $10k month.</p>
+    </div>
+    <div class="video-frame reveal d1">
+      <span class="tag" style="pointer-events:none; z-index:2;">▶ Free Training</span>
+      <iframe
+        src="https://www.loom.com/embed/31349e48171f49428015017260ca8a86?hide_owner=true&hide_share=true&hide_title=true&hideEmbedTopBar=true&hide_speed=true"
+        frameborder="0"
+        webkitallowfullscreen
+        mozallowfullscreen
+        allowfullscreen
+        allow="autoplay; fullscreen"
+        style="position:absolute; inset:0; width:100%; height:100%; border:0;"
+      ></iframe>
+    </div>
+    <p class="video-caption reveal d2">sound on 🔊</p>
+  </section>
+
+  <section id="problem">
+    <div class="section-head reveal">
+      <span class="section-label">02 — Sound Familiar?</span>
+      <h2>You're not lazy. You just started in the wrong place.</h2>
+      <p>Every person who messages us starts in basically the same spot.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card reveal">
+        <span class="x-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+        <p><strong>No money coming in online</strong> — you've tried things but nothing sticks or actually pays.</p>
+      </div>
+      <div class="problem-card reveal d1">
+        <span class="x-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+        <p><strong>Every niche seems to need skill or capital</strong> you feel like you don't have yet.</p>
+      </div>
+      <div class="problem-card reveal d2">
+        <span class="x-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+        <p><strong>Stuck scrolling other people's wins</strong> — wondering when it's finally going to be your turn.</p>
+      </div>
+      <div class="problem-card reveal d3">
+        <span class="x-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+        <p><strong>You want to change your life</strong> but nobody's given you a plan simple enough to actually follow.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="solution">
+    <div class="section-head reveal">
+      <span class="section-label">03 — The Fix</span>
+      <h2>Everything that's stopping you, solved.</h2>
+    </div>
+    <div class="solution-list">
+      <div class="solution-item reveal">
+        <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span>
+        <div class="txt">Full roadmap from $0 to $10k<span>Every step laid out — nothing left to guess.</span></div>
+      </div>
+      <div class="solution-item reveal d1">
+        <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span>
+        <div class="txt">Zero ad spend<span>Only organic content, built to run on autopilot.</span></div>
+      </div>
+      <div class="solution-item reveal d2">
+        <span class="check"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></span>
+        <div class="txt">No expensive course required<span>One affordable resource, no upsell funnel.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="inside">
+    <div class="section-head reveal">
+      <span class="section-label">04 — What's Inside</span>
+      <h2>Three modules. One outcome.</h2>
+      <p>Built in order, so you always know the exact next step.</p>
+    </div>
+    <div class="inside-grid">
+      <div class="inside-card reveal">
+        <div class="inside-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+        <span class="inside-num">MODULE 01</span>
+        <h3>Find &amp; create winning products in under 3 hours</h3>
+        <p>A repeatable system to spot what's already selling and package your own version fast.</p>
+      </div>
+      <div class="inside-card reveal d1">
+        <div class="inside-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg></div>
+        <span class="inside-num">MODULE 02</span>
+        <h3>Market it for free</h3>
+        <p>The exact organic content plan that gets eyes on your offer without spending a cent on ads.</p>
+      </div>
+      <div class="inside-card reveal d2">
+        <div class="inside-icon"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12h8M8 16h5"/></svg></div>
+        <span class="inside-num">MODULE 03</span>
+        <h3>Automate your content</h3>
+        <p>Put the whole engine on autopilot so it keeps running while you hit $10k/month and beyond.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="stats">
+    <div class="stats">
+      <div class="stat reveal">
+        <span class="num" data-count="0">0</span>
+        <span class="lbl">upfront skill required</span>
+      </div>
+      <div class="stat reveal d1">
+        <span class="num" data-count="3">0</span>
+        <span class="lbl">hours to build your first offer</span>
+      </div>
+      <div class="stat reveal d2">
+        <span class="num" data-count="100">0</span>
+        <span class="lbl">% organic, no ad spend</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="offer" class="offer-section">
+    <div class="offer-card reveal">
+      <span class="offer-tag">One Time Offer</span>
+      <h2 style="font-size:clamp(24px,4vw,36px); font-weight:700;">Get the entire roadmap today</h2>
+      <div class="price-row">
+        <span class="price-old" id="price-old">$<span id="price-old-num">0</span></span>
+        <span class="price-new" id="price-new" style="display:none;">$<span id="price-new-num">34</span></span>
+      </div>
+      <p class="price-sub">course old price → today's price, one time payment</p>
+
+      <div class="timer" id="timer">
+        <div class="unit"><span class="val" id="t-h">18</span><span class="lbl">Hours</span></div>
+        <span class="colon">:</span>
+        <div class="unit"><span class="val" id="t-m">00</span><span class="lbl">Min</span></div>
+        <span class="colon">:</span>
+        <div class="unit"><span class="val" id="t-s">00</span><span class="lbl">Sec</span></div>
+      </div>
+      <p class="timer-note">price resets when this timer runs out</p>
+
+      <a class="offer-cta" href="https://whop.com/checkout/plan_1U66aV3sWo6Vx" target="_blank" rel="noopener">
+        Get Instant Access — $34
+      </a>
+      <p class="offer-fine">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+        instant access &nbsp;·&nbsp;
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+        lifetime updates &nbsp;·&nbsp;
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+        works on mobile
+      </p>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="section-head reveal">
+      <span class="section-label">05 — FAQ</span>
+      <h2>Questions, answered.</h2>
+    </div>
+    <div class="faq-list" id="faq-list">
+      <div class="faq-item reveal">
+        <button class="faq-q">Do I need any experience to start?<span class="plus"></span></button>
+        <div class="faq-a"><p>No. The roadmap starts from zero and assumes you've never made a dollar online before — every step is explained in plain language.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q">Do I need to show my face or make videos of myself?<span class="plus"></span></button>
+        <div class="faq-a"><p>Not at all. Everything inside is built around faceless, automated content — you never have to appear on camera.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q">Do I need to spend money on ads?<span class="plus"></span></button>
+        <div class="faq-a"><p>No. The entire method runs on organic content. There is no ad budget required to get started or to scale.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q">How much time does this take per day?<span class="plus"></span></button>
+        <div class="faq-a"><p>Most people set up their first offer in about 3 hours, then spend a short daily block keeping the content engine running — it's built to fit around a job or school.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q">When do I get access?<span class="plus"></span></button>
+        <div class="faq-a"><p>Immediately. As soon as your payment goes through you're dropped straight into the full roadmap, in order, starting with Module 01.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q">Why is the price so much lower than $99?<span class="plus"></span></button>
+        <div class="faq-a"><p>This price is only live while the timer above is running. Once it hits zero, the price resets — that's the honest reason it's not always $34.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="logo"><span class="dot"></span>MONEY&nbsp;GLITCH</div>
+    <p>Results are not guaranteed and depend on individual effort. This page describes an educational product, not a guarantee of income.</p>
+  </footer>
+</div>
+
+<div id="sticky-bar">
+  <span class="p">Price resets in <b id="sticky-time">--:--:--</b></span>
+  <a class="buy" href="https://whop.com/checkout/plan_1U66aV3sWo6Vx" target="_blank" rel="noopener">Get Access — $34</a>
+</div>
+
+<script>
+(function(){
+  /* ---------------- ambient canvas blobs ---------------- */
+  var canvas = document.getElementById('bg-canvas');
+  var ctx = canvas.getContext('2d');
+  var w, h, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  function resize(){
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  var blobs = [
+    {x:0.15, y:0.1, r:340, c:'157,123,255', dx:0.00009, dy:0.00006, t:0},
+    {x:0.85, y:0.25, r:300, c:'200,255,77', dx:-0.00007, dy:0.00008, t:2},
+    {x:0.5, y:0.75, r:380, c:'157,123,255', dx:0.00006, dy:-0.00007, t:4},
+    {x:0.2, y:0.85, r:260, c:'200,255,77', dx:0.00008, dy:-0.00005, t:6}
+  ];
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var docH = 1;
+  function updateDocH(){ docH = Math.max(document.body.scrollHeight, window.innerHeight); }
+  updateDocH();
+  window.addEventListener('resize', updateDocH);
+
+  function draw(time){
+    ctx.clearRect(0,0,w,h);
+    var scrollY = window.scrollY || 0;
+    blobs.forEach(function(b){
+      var bx = b.x * w + Math.sin(time*0.06 + b.t) * 40;
+      var by = (b.y * docH + Math.cos(time*0.05 + b.t) * 50) - scrollY;
+      if(by < -b.r || by > h + b.r) return;
+      var grad = ctx.createRadialGradient(bx,by,0,bx,by,b.r);
+      grad.addColorStop(0, 'rgba('+b.c+',0.20)');
+      grad.addColorStop(1, 'rgba('+b.c+',0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(bx,by,b.r,0,Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  if(!reduceMotion){
+    var start = null;
+    function frame(ts){
+      if(!start) start = ts;
+      var t = (ts - start)/1000;
+      draw(t);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  } else {
+    draw(0);
+  }
+
+  /* ---------------- scroll progress bar ---------------- */
+  var progress = document.getElementById('progress');
+  var stickyBar = document.getElementById('sticky-bar');
+  var offerEl = document.getElementById('offer');
+  function onScroll(){
+    var doc = document.documentElement;
+    var pct = (window.scrollY) / (doc.scrollHeight - window.innerHeight) * 100;
+    progress.style.width = Math.min(100, Math.max(0,pct)) + '%';
+
+    var heroDone = window.scrollY > window.innerHeight * 0.9;
+    var offerRect = offerEl.getBoundingClientRect();
+    var offerVisible = offerRect.top < window.innerHeight && offerRect.bottom > 0;
+    if(heroDone && !offerVisible){ stickyBar.classList.add('show'); }
+    else{ stickyBar.classList.remove('show'); }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  /* ---------------- reveal on scroll ---------------- */
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, {threshold:0.15, rootMargin:'0px 0px -60px 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+
+  /* ---------------- number count-up ---------------- */
+  var statIo = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      statIo.unobserve(e.target);
+      var target = parseInt(e.target.getAttribute('data-count'), 10);
+      var dur = 1100, startTime = null;
+      function step(ts){
+        if(!startTime) startTime = ts;
+        var p = Math.min(1, (ts-startTime)/dur);
+        var eased = 1 - Math.pow(1-p, 3);
+        e.target.textContent = Math.round(eased * target);
+        if(p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }, {threshold:0.6});
+  document.querySelectorAll('.num[data-count]').forEach(function(el){ statIo.observe(el); });
+
+  /* ---------------- marquee content ---------------- */
+  var iconExp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/><line x1="6" y1="20" x2="6" y2="20"/></svg>';
+  var iconFace = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01"/><path d="M8 15c1.2 1 2.6 1.5 4 1.5s2.8-.5 4-1.5"/></svg>';
+  var iconAd = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>';
+  var items = [
+    {icon:iconExp, txt:'No experience needed'},
+    {icon:iconFace, txt:'No showing your face'},
+    {icon:iconAd, txt:'No ad spend'}
+  ];
+  var track = document.getElementById('marquee');
+  var html = '';
+  for(var r=0; r<2; r++){
+    items.forEach(function(it){
+      html += '<span class="marquee-item">'+it.icon+'<b>'+it.txt+'</b></span><span class="marquee-item sep">/</span>';
+    });
+  }
+  track.innerHTML = html;
+
+  /* ---------------- animated old → new price reveal ---------------- */
+  (function(){
+    var oldEl = document.getElementById('price-old');
+    var oldNum = document.getElementById('price-old-num');
+    var newEl = document.getElementById('price-new');
+    var newNum = document.getElementById('price-new-num');
+    if(!oldEl || !newEl) return;
+
+    function fmt(n){ return n.toLocaleString('en-US'); }
+
+    function countTo(el, target, dur, onDone){
+      var startTime = null;
+      function step(ts){
+        if(!startTime) startTime = ts;
+        var p = Math.min(1, (ts-startTime)/dur);
+        var eased = p < 1 ? 1 - Math.pow(1-p, 4) : 1;
+        el.textContent = fmt(Math.round(eased * target));
+        if(p < 1){ requestAnimationFrame(step); }
+        else if(onDone){ onDone(); }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function playSequence(){
+      // 1. count the "real" price up, big and centered
+      countTo(oldNum, 99, 950, function(){
+        // 2. hold for a beat so it reads as the real price, then shrink it down + grey it out + strike it
+        setTimeout(function(){
+          oldEl.classList.add('settled');
+          // 3. once it's settled small, pop in the new price
+          setTimeout(function(){
+            newEl.style.display = 'inline-block';
+            requestAnimationFrame(function(){
+              requestAnimationFrame(function(){
+                newEl.classList.add('shown');
+                countTo(newNum, 34, 450);
+              });
+            });
+          }, 550);
+        }, 500);
+      });
+    }
+
+    var priceIo = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.isIntersecting){
+          priceIo.unobserve(e.target);
+          if(reduceMotion){
+            oldNum.textContent = fmt(99);
+            oldEl.classList.add('settled');
+            newEl.style.display = 'inline-block';
+            newEl.classList.add('shown');
+            newNum.textContent = fmt(34);
+          } else {
+            playSequence();
+          }
+        }
+      });
+    }, {threshold:0.5});
+    priceIo.observe(document.getElementById('offer'));
+  })();
+
+  /* ---------------- FAQ accordion ---------------- */
+  document.querySelectorAll('.faq-item').forEach(function(item){
+    var btn = item.querySelector('.faq-q');
+    var ans = item.querySelector('.faq-a');
+    btn.addEventListener('click', function(){
+      var isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item.open').forEach(function(o){
+        if(o !== item){ o.classList.remove('open'); o.querySelector('.faq-a').style.maxHeight = null; }
+      });
+      if(isOpen){
+        item.classList.remove('open');
+        ans.style.maxHeight = null;
+      } else {
+        item.classList.add('open');
+        ans.style.maxHeight = ans.scrollHeight + 'px';
+      }
+    });
+  });
+
+  /* ---------------- magnetic buttons ---------------- */
+  document.querySelectorAll('.hero-cta, .offer-cta').forEach(function(btn){
+    btn.addEventListener('mousemove', function(e){
+      var r = btn.getBoundingClientRect();
+      var mx = e.clientX - r.left - r.width/2;
+      var my = e.clientY - r.top - r.height/2;
+      btn.style.transform = 'translate('+ (mx*0.12) +'px,'+ (my*0.25 - 3) +'px)';
+    });
+    btn.addEventListener('mouseleave', function(){ btn.style.transform = ''; });
+  });
+
+  /* ---------------- countdown timer, resets every 18h ---------------- */
+  var CYCLE_MS = 18 * 60 * 60 * 1000;
+  var elH = document.getElementById('t-h');
+  var elM = document.getElementById('t-m');
+  var elS = document.getElementById('t-s');
+  var stickyTime = document.getElementById('sticky-time');
+  var lastS = -1;
+
+  function pad(n){ return n < 10 ? '0'+n : ''+n; }
+
+  function tickVal(el, newText){
+    if(el.textContent !== newText){
+      el.textContent = newText;
+      el.classList.remove('tick');
+      void el.offsetWidth;
+      el.classList.add('tick');
+    }
+  }
+
+  function updateTimer(){
+    var now = Date.now();
+    var remaining = CYCLE_MS - (now % CYCLE_MS);
+    var totalSec = Math.floor(remaining/1000);
+    var hh = Math.floor(totalSec/3600);
+    var mm = Math.floor((totalSec%3600)/60);
+    var ss = totalSec%60;
+    if(ss !== lastS){
+      lastS = ss;
+      tickVal(elH, pad(hh));
+      tickVal(elM, pad(mm));
+      tickVal(elS, pad(ss));
+      var str = pad(hh)+':'+pad(mm)+':'+pad(ss);
+      stickyTime.textContent = str;
+    }
+    requestAnimationFrame(updateTimer);
+  }
+  requestAnimationFrame(updateTimer);
+
+})();
+</script>
+</body>
+</html>
